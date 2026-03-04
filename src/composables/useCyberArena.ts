@@ -116,7 +116,7 @@ export function useCyberArena() {
       // Tomamos la presencia más reciente de ese clientId
       const p = (presences as any[])[0] as PresenceState
       activeParticipants.push({
-        id: p.id,
+        id: Number(p.id) || p.id as any,
         name: p.name,
         color: p.color,
         vote: p.vote,
