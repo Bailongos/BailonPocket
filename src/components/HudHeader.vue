@@ -1,0 +1,54 @@
+<script setup lang="ts">
+import { Layout, Monitor, RefreshCw, Skull, Users } from 'lucide-vue-next'
+
+const props = defineProps<{ destroyed: number; active: number; showHologram: boolean }>()
+const emit = defineEmits<{ (e: 'toggle-hologram'): void; (e: 'new-cycle'): void }>()
+</script>
+
+<template>
+  <header
+    class="px-8 py-3 border-b border-sky-500/20 bg-slate-900/40 backdrop-blur-xl flex justify-between items-center z-50"
+  >
+    <div class="flex items-center gap-6">
+      <div class="relative group cursor-help">
+        <div
+          class="w-10 h-10 bg-sky-500/20 border border-sky-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(14,165,233,0.3)]"
+        >
+          <Monitor class="text-sky-400" :size="20" />
+        </div>
+      </div>
+
+      <div>
+        <h1 class="text-lg font-black tracking-[0.2em] text-white uppercase italic glow-text">
+          Cyber_Arena <span class="text-sky-500">v4</span>
+        </h1>
+        <div class="flex gap-3 text-[10px] font-bold text-slate-500">
+          <span class="flex items-center gap-1 text-rose-500"><Skull :size="10" /> LOST: {{ props.destroyed }}</span>
+          <span class="flex items-center gap-1 text-sky-400"><Users :size="10" /> ACTIVE: {{ props.active }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button
+        class="p-2 rounded-lg transition-all border"
+        :class="
+          props.showHologram
+            ? 'bg-indigo-500/20 border-indigo-500 text-indigo-400'
+            : 'bg-slate-800 border-white/5 text-slate-500'
+        "
+        @click="emit('toggle-hologram')"
+        aria-label="Toggle Hologram"
+      >
+        <Layout :size="18" />
+      </button>
+
+      <button
+        class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-black border border-white/5 uppercase tracking-widest transition-all"
+        @click="emit('new-cycle')"
+      >
+        <RefreshCw :size="14" class="inline mr-2" /> New Cycle
+      </button>
+    </div>
+  </header>
+</template>

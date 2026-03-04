@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/* ====== Cyber Arena Global Animations / Utilities ====== */
+@keyframes lightning-flicker {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
+  50% { opacity: 1; filter: brightness(4) drop-shadow(0 0 20px #fff); }
+}
+
+@keyframes disintegrate {
+  0%   { transform: scale(1) rotate(0deg); filter: brightness(1) contrast(1); opacity: 1; }
+  20%  { transform: scale(1.2) rotate(5deg); filter: brightness(3) contrast(2); }
+  100% { transform: scale(0) rotate(180deg) translateY(-50px); filter: brightness(10) blur(20px); opacity: 0; }
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+@keyframes hologram-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
+}
+
+@keyframes slide-in-from-left {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.shake-active { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+.disintegrating { animation: disintegrate 0.8s ease-in forwards !important; }
+
+.lightning-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-bolt 0.15s ease-out forwards;
+}
+@keyframes draw-bolt { to { stroke-dashoffset: 0; } }
+
+.hologram-effect {
+  background: linear-gradient(180deg, rgba(97, 93, 250, 0.1) 0%, rgba(97, 93, 250, 0.05) 100%);
+  box-shadow: 0 0 20px rgba(97, 93, 250, 0.2);
+  border: 1px solid rgba(97, 93, 250, 0.3);
+}
+.hologram-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: rgba(97, 93, 250, 0.5);
+  top: 0;
+  left: 0;
+  animation: hologram-scan 2s linear infinite;
+}
+
+.glow-text { text-shadow: 0 0 10px rgba(14, 165, 233, 0.8); }
+
+.cyber-border { border: 1px solid rgba(14, 165, 233, 0.2); position: relative; }
+.cyber-border::after { content: ''; position: absolute; top: -2px; left: -2px; width: 10px; height: 10px; border-top: 2px solid #0ea5e9; border-left: 2px solid #0ea5e9; }
+.cyber-border::before { content: ''; position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; border-bottom: 2px solid #0ea5e9; border-right: 2px solid #0ea5e9; }
+
+/* 3D helpers (Tailwind doesn't ship these by default) */
+.perspective-1000 { perspective: 1000px; }
+.preserve-3d { transform-style: preserve-3d; }
+.rotate-y-180 { transform: rotateY(180deg); }
+.backface-hidden { backface-visibility: hidden; }
+
+/* Simple entrance helpers (replacing animate.css / tailwind-animate plugin) */
+.slide-in-from-left { animation: slide-in-from-left 0.3s ease-out both; }
+.zoom-in { animation: zoom-in 0.5s ease-out both; }
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #020408;
+}
