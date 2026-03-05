@@ -37,6 +37,7 @@ async function fetchBoards() {
             body: { access_token: props.accessToken, action: 'list_boards' }
         })
         if (!error && data?.boards) {
+            console.log("Monday boards data:", data)
             boards.value = data.boards
         }
     } catch (err) {

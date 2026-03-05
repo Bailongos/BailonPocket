@@ -36,10 +36,12 @@ serve(async (req: Request) => {
       });
 
       const data = await res.json();
+      console.log("Monday API boards response:", JSON.stringify(data));
 
       return new Response(JSON.stringify({
         status: 'success',
-        boards: data?.data?.boards || []
+        boards: data?.data?.boards || [],
+        _debug: data  // Include raw response for debugging
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
