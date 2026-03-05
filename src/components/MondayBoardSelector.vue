@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { X, Loader2, ChevronRight, LayoutGrid, Search } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 
@@ -27,17 +27,16 @@ const items = ref<MondayItem[]>([])
 const selectedBoardName = ref('')
 const isLoadingBoards = ref(false)
 const isLoadingItems = ref(false)
+const isSearching = ref(false)
 const step = ref<'boards' | 'items'>('boards')
 const searchQuery = ref('')
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Filtrar tableros por búsqueda y ocultar los que son "Subelementos de..."
+// Filtrar "Subelementos" localmente
 const filteredBoards = computed(() => {
-    return boards.value
-        .filter(b => !b.name.startsWith('Subelementos de') && !b.name.startsWith('Subitems of'))
-        .filter(b => {
-            if (!searchQuery.value) return true
-            return b.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-        })
+    return boards.value.filter(b =>
+        !b.name.startsWith('Subelementos de') && !b.name.startsWith('Subitems of')
+    )
 })
 
 async function fetchBoards() {
@@ -48,16 +47,46 @@ async function fetchBoards() {
             body: { access_token: props.accessToken, action: 'list_boards' }
         })
         if (!error && data?.boards) {
-            console.log("Monday boards data:", data)
             boards.value = data.boards
-        } else {
-            console.error('Monday boards error:', error, 'Data:', data)
         }
     } catch (err) {
         console.error('Error fetching boards', err)
     }
     isLoadingBoards.value = false
 }
+
+// Buscar tableros en el servidor (busca en TODOS tus tableros, no solo los primeros 500)
+async function searchBoards(term: string) {
+    if (!supabase || !term.trim()) {
+        fetchBoards() // Regresa a la lista normal si no hay texto
+        return
+    }
+    isSearching.value = true
+    try {
+        const { data, error } = await supabase.functions.invoke('monday-boards', {
+            body: { access_token: props.accessToken, action: 'search_boards', search_term: term }
+        })
+        if (!error && data?.boards) {
+            boards.value = data.boards
+            console.log(`Encontrados ${data.boards.length} tableros de ${data.total} totales para "${term}"`)
+        }
+    } catch (err) {
+        console.error('Error searching boards', err)
+    }
+    isSearching.value = false
+}
+
+// Debounce la busqueda para no spamear la API
+watch(searchQuery, (val) => {
+    if (searchTimeout) clearTimeout(searchTimeout)
+    searchTimeout = setTimeout(() => {
+        if (val.trim().length >= 2) {
+            searchBoards(val)
+        } else if (val.trim().length === 0) {
+            fetchBoards()
+        }
+    }, 400)
+})
 
 async function selectBoard(board: MondayBoard) {
     if (!supabase) return
@@ -68,6 +97,7 @@ async function selectBoard(board: MondayBoard) {
         const { data, error } = await supabase.functions.invoke('monday-boards', {
             body: { access_token: props.accessToken, action: 'get_items', board_id: board.id }
         })
+        console.log('Monday items response:', data)
         if (!error && data?.items) {
             items.value = data.items
         }
@@ -110,11 +140,13 @@ fetchBoards()
                     </button>
                 </div>
 
-                <!-- Search Bar (solo en paso de boards) -->
+                <!-- Search Bar -->
                 <div v-if="step === 'boards'" class="relative">
                     <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" :size="16" />
-                    <input v-model="searchQuery" type="text" placeholder="Buscar tablero..."
+                    <input v-model="searchQuery" type="text" placeholder="Buscar tablero en toda tu cuenta..."
                         class="w-full bg-slate-900/80 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-sky-500/50 transition-colors placeholder:text-slate-600 font-mono" />
+                    <Loader2 v-if="isSearching"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-sky-400 animate-spin" :size="16" />
                 </div>
             </div>
 
@@ -145,13 +177,13 @@ fetchBoards()
                             :size="18" />
                     </button>
 
-                    <p v-if="filteredBoards.length === 0 && boards.length > 0"
+                    <p v-if="filteredBoards.length === 0 && searchQuery.length >= 2"
                         class="text-slate-500 text-center text-xs py-8">
                         No hay tableros que coincidan con "<span class="text-sky-400">{{ searchQuery }}</span>"
                     </p>
 
-                    <p v-if="boards.length === 0" class="text-slate-600 text-center text-xs py-8">
-                        No se encontraron tableros en tu cuenta de Monday.com
+                    <p v-if="boards.length === 0 && !searchQuery" class="text-slate-600 text-center text-xs py-8">
+                        No se encontraron tableros
                     </p>
                 </template>
 
