@@ -23,6 +23,12 @@ export type Strike = {
   y: number
 }
 
+export type Reaction = {
+  id: number
+  emoji: string
+  x: number
+}
+
 export type Stats = {
   avg: string
   min: number

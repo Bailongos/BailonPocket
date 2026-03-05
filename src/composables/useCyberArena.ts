@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { BOT_PHRASES, COLORS, FIBONACCI, MOCK_MONDAY_ITEMS, NAMES } from '@/constants/game'
-import type { ChatMessage, Participant, Strike, Stats } from '@/types'
+import { BOT_PHRASES, COLORS, FIBONACCI, NAMES } from '@/constants/game'
+import { THEMES, type ThemeName } from '@/constants/themes'
+import type { ChatMessage, Participant, Strike, Stats, Reaction } from '@/types'
 import { supabase } from '@/lib/supabase'
 
 // Interfaz para el estado de presencia que enviaremos a Realtime
@@ -25,12 +26,10 @@ export function useCyberArena() {
 
   const chatMessages = ref<ChatMessage[]>([])
   const strikes = ref<Strike[]>([])
+  const reactions = ref<Reaction[]>([])
   const destroyedIds = ref<Set<number>>(new Set())
   const isShaking = ref(false)
-  const showHologram = ref(true)
-
-  const mondayItems = ref(MOCK_MONDAY_ITEMS)
-  const currentIndex = ref(0)
+  const currentTheme = ref<ThemeName>('original')
   
   const currentRoomId = ref<string | null>(null)
   const myParticipantId = ref<string | null>(null)
@@ -89,8 +88,8 @@ export function useCyberArena() {
     chatMessages.value = []
     isRevealed.value = false
     myVote.value = null
-    showHologram.value = true
-    currentIndex.value = 0
+    isRevealed.value = false
+    myVote.value = null
 
     // Simula votos del equipo
     initial.forEach((p) => {
@@ -163,9 +162,8 @@ export function useCyberArena() {
     destroyedIds.value = new Set()
     strikes.value = []
     chatMessages.value = []
-    showHologram.value = true
+    chatMessages.value = []
     isRevealed.value = false
-    currentIndex.value = 0
     
     roomChannel = supabase!.channel(`room:${roomId}`, {
       config: {
@@ -191,14 +189,26 @@ export function useCyberArena() {
         // Cuando hay nuevo ciclo, actualizo mi presencia para limpiar mi voto
         updateMyPresence({ vote: null, hasVoted: false })
       }
-      if (payload.payload.action === 'change_issue') {
-        currentIndex.value = payload.payload.index
-      }
       if (payload.payload.action === 'lightning') {
         const targetId = payload.payload.targetId
         destroyedIds.value.add(targetId)
         // Disparar la animación visualmente en este cliente
         triggerLightningVisual(targetId, payload.payload.botMessage)
+      }
+      if (payload.payload.action === 'reaction') {
+        addReactionLocal(payload.payload.emoji, payload.payload.x)
+      }
+      if (payload.payload.action === 'lightning_target') {
+        // Disparar animación en coordenadas absolutas
+        const { x, y } = payload.payload
+        const tShake = window.setTimeout(() => (isShaking.value = false), 400)
+        timeouts.push(tShake)
+      }
+      if (payload.payload.action === 'change_theme') {
+        currentTheme.value = payload.payload.theme
+      }
+      if (payload.payload.action === 'chat_message') {
+        chatMessages.value = [...chatMessages.value.slice(-9), payload.payload.message]
       }
     })
     
@@ -308,6 +318,78 @@ export function useCyberArena() {
     }
   }
 
+  function fireTarget(x: number, y: number) {
+    // Disparo local
+    addStrike(x, y)
+    isShaking.value = true
+    const tShake = window.setTimeout(() => (isShaking.value = false), 400)
+    timeouts.push(tShake)
+
+    if (isMultiplayer.value && roomChannel) {
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'room_state',
+        payload: { 
+          action: 'lightning_target', 
+          x,
+          y
+        },
+      })
+    }
+  }
+
+  function addReactionLocal(emoji: string, explicitX?: number) {
+    // Si no pasan X, lo ponemos random entre 10 y 90 (porcentajes de ancho de pantalla)
+    const x = explicitX ?? (10 + Math.random() * 80)
+    const newReact: Reaction = { id: Date.now() + Math.random(), emoji, x }
+    reactions.value.push(newReact)
+    
+    // Auto remover después de la animación de subida
+    const t = window.setTimeout(() => {
+      reactions.value = reactions.value.filter(r => r.id !== newReact.id)
+    }, 3000)
+    timeouts.push(t)
+  }
+
+  function fireReaction(emoji: string) {
+    const x = 10 + Math.random() * 80
+    addReactionLocal(emoji, x)
+
+    if (isMultiplayer.value && roomChannel) {
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'room_state',
+        payload: {
+          action: 'reaction',
+          emoji,
+          x
+        }
+      })
+    }
+  }
+
+  function sendChatMessage(text: string) {
+    if (!text.trim()) return
+    const msg: ChatMessage = {
+      id: Date.now() + Math.random(),
+      name: myParticipantName.value,
+      text: text,
+      color: '#ffffff'
+    }
+    chatMessages.value = [...chatMessages.value.slice(-9), msg]
+
+    if (isMultiplayer.value && roomChannel) {
+      roomChannel.send({
+        type: 'broadcast',
+        event: 'room_state',
+        payload: {
+          action: 'chat_message',
+          message: msg
+        }
+      })
+    }
+  }
+
   const stats = computed<Stats>(() => {
     const votes = participants.value
       .filter((p) => !destroyedIds.value.has(p.id))
@@ -350,26 +432,13 @@ export function useCyberArena() {
     }
   }
 
-  async function nextMonday() {
-    const nextIdx = (currentIndex.value + 1) % mondayItems.value.length
-    currentIndex.value = nextIdx
+  async function changeTheme(theme: ThemeName) {
+    currentTheme.value = theme
     if (isMultiplayer.value && roomChannel) {
       await roomChannel.send({
         type: 'broadcast',
         event: 'room_state',
-        payload: { action: 'change_issue', index: nextIdx },
-      })
-    }
-  }
-
-  async function prevMonday() {
-    const prevIdx = (currentIndex.value - 1 + mondayItems.value.length) % mondayItems.value.length
-    currentIndex.value = prevIdx
-    if (isMultiplayer.value && roomChannel) {
-      await roomChannel.send({
-        type: 'broadcast',
-        event: 'room_state',
-        payload: { action: 'change_issue', index: prevIdx },
+        payload: { action: 'change_theme', theme },
       })
     }
   }
@@ -387,14 +456,13 @@ export function useCyberArena() {
     sessionKey,
     chatMessages,
     strikes,
+    reactions,
     destroyedIds,
     isShaking,
-    showHologram,
-    mondayItems,
-    currentIndex,
     currentRoomId,
     myParticipantId,
     isMultiplayer,
+    currentTheme,
 
     // derived
     stats,
@@ -403,11 +471,13 @@ export function useCyberArena() {
     // actions
     newCycle,
     fireLightning,
+    fireTarget,
+    fireReaction,
     removeStrike,
     pickVote,
     reveal,
-    nextMonday,
-    prevMonday,
+    changeTheme,
+    sendChatMessage,
     initSupabaseSession,
     initMockSession
   }

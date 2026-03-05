@@ -37,17 +37,27 @@ export const BOT_PHRASES = [
   '¡Modo Caos detectado!'
 ] as const
 
-export type MondayItem = { id: string; name: string; text: string }
+export type SystemTip = { id: string; name: string; text: string }
 
-export const MOCK_MONDAY_ITEMS: MondayItem[] = [
+export const MOCK_SYSTEM_TIPS: SystemTip[] = [
   {
-    id: '12345678',
-    name: 'Refactorizar Componente de Login',
-    text: 'Mejorar la seguridad del flujo de autenticación y añadir soporte para biometría.'
+    id: 'TIP-001',
+    name: 'Scrum Tip: Daily Standup',
+    text: 'El Daily no es un reporte de estatus. Su objetivo es sincronizar al equipo y detectar bloqueos tempranamente. ¡Mantenlo breve!'
   },
   {
-    id: '87654321',
-    name: 'Integración API de Pagos',
-    text: 'Conectar el checkout con el nuevo provider de Stripe para suscripciones recurrentes.'
+    id: 'TIP-002',
+    name: 'Dev Tip: Code Reviews',
+    text: 'Revisa el código pensando en la mantenibilidad. Deja comentarios constructivos y enfocate en la lógica, no en el estilo (para eso hay linters).'
+  },
+  {
+    id: 'TIP-003',
+    name: 'Scrum Tip: Retrospectivas',
+    text: 'Las retrospectivas son el corazón de la mejora continua. Enfóquense en procesos ejecutables, no en buscar un culpable.'
+  },
+  {
+    id: 'TIP-004',
+    name: 'Dev Tip: Deuda Técnica',
+    text: 'Documentar la deuda técnica es vital. Escribe comentarios claros con "TODO:" o crea tickets en el backlog para poder abordarla cuando haya tiempo.'
   }
 ]
