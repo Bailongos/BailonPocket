@@ -43,7 +43,7 @@ function handleJoin(roomId: string, participantName: string) {
       // Implementar lógica de creación de participante en BD aquí si el usuario no existe.
       // Por simplicidad en esta demo, pasamos el participantName como ID (o lo generamos).
       const randomId = crypto.randomUUID()
-      initSupabaseSession(roomId, randomId)
+      initSupabaseSession(roomId, randomId, participantName)
     } else {
       if (roomId && !supabase) {
         alert('Supabase no está configurado en este entorno. Iniciando simulación local (offline).')

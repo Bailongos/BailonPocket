@@ -34,6 +34,7 @@ export function useCyberArena() {
   
   const currentRoomId = ref<string | null>(null)
   const myParticipantId = ref<string | null>(null)
+  const myParticipantName = ref<string>('Cyber Master')
   const isMultiplayer = computed(() => !!supabase && !!currentRoomId.value)
 
   const timeouts: number[] = []
@@ -151,12 +152,13 @@ export function useCyberArena() {
     await roomChannel.track(newState)
   }
 
-  async function initSupabaseSession(roomId: string, participantId: string) {
+  async function initSupabaseSession(roomId: string, participantId: string, participantName: string) {
     clearTimers()
     cleanupSupabase()
     
     currentRoomId.value = roomId
     myParticipantId.value = participantId
+    myParticipantName.value = participantName
     
     destroyedIds.value = new Set()
     strikes.value = []
@@ -202,8 +204,8 @@ export function useCyberArena() {
     
     roomChannel.subscribe(async (status: string) => {
       if (status === 'SUBSCRIBED') {
-        // Me uno a Presence
-        await updateMyPresence({ vote: null, hasVoted: false })
+        // Me uno a Presence pasando el nombre que elegí en el Lobby
+        await updateMyPresence({ vote: null, hasVoted: false, name: participantName })
       }
     })
   }
@@ -231,7 +233,7 @@ export function useCyberArena() {
     if (isMultiplayer.value) {
       // Si ya hay roomId, recargamos (nuevo ciclo)
       if (currentRoomId.value && myParticipantId.value) {
-        initSupabaseSession(currentRoomId.value, myParticipantId.value)
+        initSupabaseSession(currentRoomId.value, myParticipantId.value, myParticipantName.value)
       }
     } else {
       initMockSession()
