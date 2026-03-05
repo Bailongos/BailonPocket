@@ -23,7 +23,7 @@ serve(async (req: Request) => {
     // ── ACTION: list_boards ──────────────────────────────────────────
     // Retorna la lista de tableros del usuario para que elija cuál estimar
     if (action === 'list_boards') {
-      const query = `query { boards (limit: 50) { id name description items_count } }`;
+      const query = `query { boards (limit: 200, board_kind: public_board) { id name description items_count } }`;
 
       const res = await fetch("https://api.monday.com/v2", {
         method: "POST",

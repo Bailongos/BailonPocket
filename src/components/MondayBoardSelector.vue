@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { X, Loader2, ChevronRight, LayoutGrid } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { X, Loader2, ChevronRight, LayoutGrid, Search } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 
 interface MondayBoard {
@@ -28,6 +28,17 @@ const selectedBoardName = ref('')
 const isLoadingBoards = ref(false)
 const isLoadingItems = ref(false)
 const step = ref<'boards' | 'items'>('boards')
+const searchQuery = ref('')
+
+// Filtrar tableros por búsqueda y ocultar los que son "Subelementos de..."
+const filteredBoards = computed(() => {
+    return boards.value
+        .filter(b => !b.name.startsWith('Subelementos de') && !b.name.startsWith('Subitems of'))
+        .filter(b => {
+            if (!searchQuery.value) return true
+            return b.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+        })
+})
 
 async function fetchBoards() {
     if (!supabase) return
@@ -39,6 +50,8 @@ async function fetchBoards() {
         if (!error && data?.boards) {
             console.log("Monday boards data:", data)
             boards.value = data.boards
+        } else {
+            console.error('Monday boards error:', error, 'Data:', data)
         }
     } catch (err) {
         console.error('Error fetching boards', err)
@@ -84,16 +97,25 @@ fetchBoards()
             class="w-[560px] max-w-[95vw] max-h-[80vh] bg-slate-950 border border-sky-500/30 rounded-3xl shadow-[0_0_80px_rgba(14,165,233,0.15)] flex flex-col overflow-hidden">
 
             <!-- Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
-                <div class="flex items-center gap-3">
-                    <LayoutGrid class="text-indigo-400" :size="20" />
-                    <h2 class="text-white font-black text-sm uppercase tracking-widest">
-                        {{ step === 'boards' ? 'Seleccionar Tablero' : selectedBoardName }}
-                    </h2>
+            <div class="px-6 py-4 border-b border-white/10">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <LayoutGrid class="text-indigo-400" :size="20" />
+                        <h2 class="text-white font-black text-sm uppercase tracking-widest">
+                            {{ step === 'boards' ? 'Seleccionar Tablero' : selectedBoardName }}
+                        </h2>
+                    </div>
+                    <button @click="emit('close')" class="text-slate-500 hover:text-white transition-colors">
+                        <X :size="20" />
+                    </button>
                 </div>
-                <button @click="emit('close')" class="text-slate-500 hover:text-white transition-colors">
-                    <X :size="20" />
-                </button>
+
+                <!-- Search Bar (solo en paso de boards) -->
+                <div v-if="step === 'boards'" class="relative">
+                    <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" :size="16" />
+                    <input v-model="searchQuery" type="text" placeholder="Buscar tablero..."
+                        class="w-full bg-slate-900/80 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-sky-500/50 transition-colors placeholder:text-slate-600 font-mono" />
+                </div>
             </div>
 
             <!-- Content -->
@@ -110,15 +132,23 @@ fetchBoards()
 
                 <!-- Board List -->
                 <template v-if="step === 'boards' && !isLoadingBoards">
-                    <button v-for="board in boards" :key="board.id" @click="selectBoard(board)"
+                    <button v-for="board in filteredBoards" :key="board.id" @click="selectBoard(board)"
                         class="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-slate-900/60 hover:bg-sky-500/10 hover:border-sky-500/30 transition-all group text-left">
-                        <div>
-                            <p class="text-white font-bold text-sm group-hover:text-sky-300 transition-colors">{{
+                        <div class="min-w-0 flex-1">
+                            <p class="text-white font-bold text-sm group-hover:text-sky-300 transition-colors truncate">
+                                {{
                                 board.name }}</p>
                             <p class="text-slate-500 text-[10px] mt-1">{{ board.items_count }} items</p>
                         </div>
-                        <ChevronRight class="text-slate-600 group-hover:text-sky-400 transition-colors" :size="18" />
+                        <ChevronRight
+                            class="text-slate-600 group-hover:text-sky-400 transition-colors flex-shrink-0 ml-2"
+                            :size="18" />
                     </button>
+
+                    <p v-if="filteredBoards.length === 0 && boards.length > 0"
+                        class="text-slate-500 text-center text-xs py-8">
+                        No hay tableros que coincidan con "<span class="text-sky-400">{{ searchQuery }}</span>"
+                    </p>
 
                     <p v-if="boards.length === 0" class="text-slate-600 text-center text-xs py-8">
                         No se encontraron tableros en tu cuenta de Monday.com
@@ -146,7 +176,7 @@ fetchBoards()
                     class="text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors">
                     ← Regresar
                 </button>
-                <span v-else></span>
+                <div v-else class="text-slate-600 text-[10px]">{{ filteredBoards.length }} tableros</div>
 
                 <button v-if="step === 'items' && items.length > 0" @click="confirmSelection"
                     class="px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-900 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(14,165,233,0.3)]">
