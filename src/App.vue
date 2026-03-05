@@ -38,15 +38,20 @@ const {
 const isLobby = ref(true)
 
 function handleJoin(roomId: string, participantName: string) {
-  if (roomId) {
-    // Implementar lógica de creación de participante en BD aquí si el usuario no existe.
-    // Por simplicidad en esta demo, pasamos el participantName como ID (o lo generamos).
-    const randomId = crypto.randomUUID()
-    initSupabaseSession(roomId, randomId)
-  } else {
-    initMockSession()
-  }
-  isLobby.value = false
+  import('@/lib/supabase').then(({ supabase }) => {
+    if (roomId && supabase) {
+      // Implementar lógica de creación de participante en BD aquí si el usuario no existe.
+      // Por simplicidad en esta demo, pasamos el participantName como ID (o lo generamos).
+      const randomId = crypto.randomUUID()
+      initSupabaseSession(roomId, randomId)
+    } else {
+      if (roomId && !supabase) {
+        alert('Supabase no está configurado en este entorno. Iniciando simulación local (offline).')
+      }
+      initMockSession()
+    }
+    isLobby.value = false
+  })
 }
 
 const currentMonday = computed(() => mondayItems.value[currentIndex.value])
