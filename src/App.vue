@@ -12,6 +12,7 @@ import VoteFooter from '@/components/VoteFooter.vue'
 import RoomLobby from '@/components/RoomLobby.vue'
 import FloatingReactions from '@/components/FloatingReactions.vue'
 import LightningStrike from '@/components/LightningStrike.vue'
+import MondayBoardSelector from '@/components/MondayBoardSelector.vue'
 
 const {
   participants,
@@ -69,6 +70,24 @@ function handleJoin(roomId: string, participantName: string) {
 
 // Lógica de Integración Segura con Monday.com
 const isSyncingMonday = ref(false)
+const mondayToken = ref<string | null>(null)
+const showBoardSelector = ref(false)
+
+interface MondayTicket { id: string; name: string; group?: { title: string } }
+const mondayTickets = ref<MondayTicket[]>([])
+const currentTicketIndex = ref(0)
+const mondayBoardName = ref('')
+
+const currentTicket = computed(() => mondayTickets.value[currentTicketIndex.value] || null)
+
+function nextTicket() {
+  if (mondayTickets.value.length === 0) return
+  currentTicketIndex.value = (currentTicketIndex.value + 1) % mondayTickets.value.length
+}
+function prevTicket() {
+  if (mondayTickets.value.length === 0) return
+  currentTicketIndex.value = (currentTicketIndex.value - 1 + mondayTickets.value.length) % mondayTickets.value.length
+}
 
 function handleMondayLogin() {
   const clientID = 'b017b4b6f6ca8ec8b1c6d16e5f2c45f0'
@@ -100,9 +119,11 @@ onMounted(() => {
           body: { code, redirect_uri }
         })
 
-        if (!error && data?.status === 'success') {
+        if (!error && data?.data?.access_token) {
           console.log("Auth Exitosa con Monday!", data)
-          alert("¡Conexión con Monday completada! Los tickets serán cargados.")
+          mondayToken.value = data.data.access_token
+          showBoardSelector.value = true
+          initMockSession() // Auto-start arena session
         } else {
           console.error("Error intercambiando OAuth token", error || data)
           alert("Error al conectar con Monday. " + (error?.message || "Revisa la consola."))
@@ -126,10 +147,27 @@ onMounted(() => {
     <!-- Lightning overlays -->
     <LightningStrike v-for="s in strikes" :key="s.id" :target-x="s.x" :target-y="s.y" @complete="removeStrike(s.id)" />
 
-    <HudHeader :destroyed="destroyedIds.size" :active="activeCount" :theme="currentTheme" @new-cycle="newCycle"
-      @change-theme="changeTheme" @monday-login="handleMondayLogin" />
+    <HudHeader :destroyed="destroyedIds.size" :active="activeCount" :theme="currentTheme"
+      :monday-connected="!!mondayToken" @new-cycle="newCycle" @change-theme="changeTheme"
+      @monday-login="handleMondayLogin" @select-board="showBoardSelector = true" />
 
     <div class="flex-1 min-h-0 flex relative w-full">
+
+      <!-- Monday Ticket Bar -->
+      <div v-if="currentTicket"
+        class="absolute top-3 left-1/2 -translate-x-1/2 z-[60] bg-slate-950/80 backdrop-blur-xl border rounded-2xl px-6 py-3 flex items-center gap-4 max-w-[90vw]"
+        :class="activeTheme.border">
+        <button @click="prevTicket"
+          class="text-slate-500 hover:text-white text-lg font-bold transition-colors">←</button>
+        <div class="text-center min-w-0">
+          <p class="text-white font-bold text-sm truncate">{{ currentTicket.name }}</p>
+          <p class="text-indigo-400/60 text-[9px] font-bold uppercase tracking-widest">
+            {{ mondayBoardName }} • {{ currentTicketIndex + 1 }}/{{ mondayTickets.length }}
+          </p>
+        </div>
+        <button @click="nextTicket"
+          class="text-slate-500 hover:text-white text-lg font-bold transition-colors">→</button>
+      </div>
 
       <main class="flex-1 min-w-0 relative flex items-center justify-center p-2 md:p-8 overflow-visible">
         <Arena :participants="participants" :destroyed-ids="destroyedIds" :is-revealed="isRevealed" :my-vote="myVote"
@@ -172,5 +210,10 @@ onMounted(() => {
       @pick="pickVote" />
 
     <FloatingReactions :reactions="reactions" @fire="fireReaction" />
+
+    <!-- Monday Board Selector Modal -->
+    <MondayBoardSelector v-if="showBoardSelector && mondayToken" :access-token="mondayToken"
+      @close="showBoardSelector = false"
+      @select-items="(items, boardName) => { mondayTickets = items; mondayBoardName = boardName; currentTicketIndex = 0; showBoardSelector = false }" />
   </div>
 </template>

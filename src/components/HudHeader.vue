@@ -2,11 +2,12 @@
 import { Layout, Monitor, RefreshCw, Skull, Users } from 'lucide-vue-next'
 import { THEMES, type ThemeName } from '@/constants/themes'
 
-const props = defineProps<{ destroyed: number; active: number; theme: ThemeName }>()
+const props = defineProps<{ destroyed: number; active: number; theme: ThemeName; mondayConnected: boolean }>()
 const emit = defineEmits<{
   (e: 'new-cycle'): void
   (e: 'change-theme', theme: ThemeName): void
   (e: 'monday-login'): void
+  (e: 'select-board'): void
 }>()
 </script>
 
@@ -46,10 +47,15 @@ const emit = defineEmits<{
         </option>
       </select>
 
-      <button
-        class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-black border border-indigo-400/30 uppercase tracking-widest transition-all glow-text"
+      <button v-if="!props.mondayConnected"
+        class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-black border border-indigo-400/30 uppercase tracking-widest transition-all"
         @click="emit('monday-login')">
         Monday Login
+      </button>
+      <button v-else
+        class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-black border border-emerald-400/30 uppercase tracking-widest transition-all"
+        @click="emit('select-board')">
+        Select Board
       </button>
 
       <button
