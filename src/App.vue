@@ -72,13 +72,13 @@ const isSyncingMonday = ref(false)
 
 function handleMondayLogin() {
   const clientID = 'b017b4b6f6ca8ec8b1c6d16e5f2c45f0'
-  const redirectUri = 'https://bailonpokect.netlify.app/' // O en dev: window.location.origin
+  // Monday.com requiere HTTPS en las redirect URIs, así que SIEMPRE usamos la URL de producción.
+  // Después del login, el usuario deberá copiar el ?code= de Netlify y pegarlo manualmente en localhost,
+  // O idealmente, probar el flujo completo desde Netlify directamente.
+  const redirectUri = 'https://bailonpokect.netlify.app/'
 
-  // Es mejor usar window.location.origin para que sirva tanto en local (http://localhost:5173) como en prod
-  const safeRedirect = window.location.hostname === 'localhost' ? window.location.origin + '/' : redirectUri
-
-  const authUrl = `https://auth.monday.com/oauth2/authorize?client_id=${clientID}&redirect_uri=${safeRedirect}`
-  console.log("ATENCIÓN: Debes tener esta URL exacta agregada en tu consola de Monday:", safeRedirect)
+  const authUrl = `https://auth.monday.com/oauth2/authorize?client_id=${clientID}&redirect_uri=${encodeURIComponent(redirectUri)}`
+  console.log("Monday OAuth: Redirigiendo a Monday. Después del login serás enviado a:", redirectUri)
   window.location.href = authUrl
 }
 
