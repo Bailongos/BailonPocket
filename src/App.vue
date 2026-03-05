@@ -54,10 +54,15 @@ function handleChatSubmit() {
 }
 
 function handleJoin(roomId: string, participantName: string) {
+  // Guardar sesion en localStorage para que sobreviva el redirect de OAuth
+  localStorage.setItem('cyber_room_id', roomId)
+  localStorage.setItem('cyber_participant_name', participantName)
+
   import('@/lib/supabase').then(({ supabase }) => {
     if (roomId && supabase) {
-      const randomId = crypto.randomUUID()
-      initSupabaseSession(roomId, randomId, participantName)
+      const participantId = localStorage.getItem('cyber_participant_id') || crypto.randomUUID()
+      localStorage.setItem('cyber_participant_id', participantId)
+      initSupabaseSession(roomId, participantId, participantName)
     } else {
       if (roomId && !supabase) {
         alert('Supabase no está configurado en este entorno. Iniciando simulación local (offline).')
@@ -123,7 +128,17 @@ onMounted(() => {
           console.log("Auth Exitosa con Monday!", data)
           mondayToken.value = data.data.access_token
           showBoardSelector.value = true
-          initMockSession() // Auto-start arena session
+
+          // Restaurar la sesion guardada antes del redirect de OAuth
+          const savedRoom = localStorage.getItem('cyber_room_id')
+          const savedName = localStorage.getItem('cyber_participant_name')
+          const savedId = localStorage.getItem('cyber_participant_id')
+
+          if (savedRoom && savedName && supabase) {
+            initSupabaseSession(savedRoom, savedId || crypto.randomUUID(), savedName)
+          } else {
+            initMockSession()
+          }
         } else {
           console.error("Error intercambiando OAuth token", error || data)
           alert("Error al conectar con Monday. " + (error?.message || "Revisa la consola."))
