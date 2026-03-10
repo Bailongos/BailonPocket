@@ -52,16 +52,17 @@ function handleChatSubmit() {
   }
 }
 
-function handleJoin(roomId: string, participantName: string) {
+function handleJoin(roomId: string, participantName: string, participantRole: string) {
   // Guardar sesion en localStorage para que sobreviva el redirect de OAuth
   localStorage.setItem('cyber_room_id', roomId)
   localStorage.setItem('cyber_participant_name', participantName)
+  localStorage.setItem('cyber_participant_role', participantRole)
 
   import('@/lib/supabase').then(({ supabase }) => {
     if (roomId && supabase) {
       const participantId = localStorage.getItem('cyber_participant_id') || crypto.randomUUID()
       localStorage.setItem('cyber_participant_id', participantId)
-      initSupabaseSession(roomId, participantId, participantName)
+      initSupabaseSession(roomId, participantId, participantName, participantRole)
     } else {
       if (roomId && !supabase) {
         alert('Supabase no está configurado en este entorno. Iniciando simulación local (offline).')
@@ -177,13 +178,13 @@ onMounted(() => {
           mondayToken.value = data.data.access_token
           showBoardSelector.value = true
 
-          // Restaurar la sesion guardada antes del redirect de OAuth
           const savedRoom = localStorage.getItem('cyber_room_id')
           const savedName = localStorage.getItem('cyber_participant_name')
           const savedId = localStorage.getItem('cyber_participant_id')
+          const savedRole = localStorage.getItem('cyber_participant_role') || 'Developer'
 
           if (savedRoom && savedName && supabase) {
-            initSupabaseSession(savedRoom, savedId || crypto.randomUUID(), savedName)
+            initSupabaseSession(savedRoom, savedId || crypto.randomUUID(), savedName, savedRole)
           } else {
             initMockSession()
           }
@@ -309,7 +310,7 @@ onMounted(() => {
               <div>
                 <div class="text-[10px] text-slate-500 uppercase tracking-[0.2em] mb-1">Sprint</div>
                 <div class="text-white font-mono text-xs md:text-sm">{{ currentTicket.group?.title || 'Backlog General'
-                }}</div>
+                  }}</div>
               </div>
             </div>
 

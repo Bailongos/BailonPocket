@@ -85,10 +85,11 @@ const isCompact = computed(() => props.participants.length > 5)
 
                 <!-- Compact Hover Name Tooltip -->
                 <div v-if="isCompact"
-                    class="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:flex z-50 pointer-events-none">
+                    class="absolute -top-10 left-1/2 -translate-x-1/2 hidden group-hover:flex z-50 pointer-events-none flex-col items-center gap-1">
                     <div
-                        class="bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap border border-white/10">
-                        {{ member.name }}
+                        class="bg-slate-800 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap border border-white/10 text-center">
+                        <div>{{ member.name }}</div>
+                        <div class="text-[9px] text-cyan-400 font-mono mt-0.5">{{ member.role }}</div>
                     </div>
                 </div>
 
@@ -107,7 +108,9 @@ const isCompact = computed(() => props.participants.length > 5)
 
                     <div v-if="!isCompact">
                         <div class="text-sm font-bold text-slate-200">{{ member.name }}</div>
-                        <div class="text-[10px] text-slate-500 font-mono tracking-wider">
+                        <div class="text-[10px] text-cyan-500/80 font-mono tracking-wider font-semibold mb-0.5">{{
+                            member.role }}</div>
+                        <div class="text-[9px] text-slate-500 font-mono tracking-wider">
                             {{ member.hasVoted ? 'VOTE_SUBMITTED' : 'IDLE' }}
                         </div>
                     </div>

@@ -3,6 +3,7 @@ export type FibonacciCard = string
 export type Participant = {
   id: number
   name: string
+  role?: string
   color: string
   vote: FibonacciCard | null
   hasVoted: boolean

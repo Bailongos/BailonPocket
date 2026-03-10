@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase'
 interface PresenceState {
   id: number | string
   name: string
+  role?: string
   color: string
   vote: string | null
   hasVoted: boolean
@@ -34,6 +35,7 @@ export function useCyberArena() {
   const currentRoomId = ref<string | null>(null)
   const myParticipantId = ref<string | null>(null)
   const myParticipantName = ref<string>('Cyber Master')
+  const myParticipantRole = ref<string>('Developer')
   const isMultiplayer = computed(() => !!supabase && !!currentRoomId.value)
 
   const timeouts: number[] = []
@@ -56,12 +58,14 @@ export function useCyberArena() {
     }
   }
 
-  function initMockSession() {
+  function initMockSession(role: string = 'Developer') {
     clearTimers()
+    myParticipantRole.value = role
 
     const initial: Participant[] = NAMES.map((name, i) => ({
       id: i,
       name,
+      role: 'Participant',
       color: COLORS[i] ?? '#ffffff',
       vote: null,
       hasVoted: false,
@@ -75,6 +79,7 @@ export function useCyberArena() {
     initial.push({
       id: 99,
       name: 'Tú (Cyber Master)',
+      role: myParticipantRole.value,
       color: '#ffffff',
       vote: null,
       hasVoted: false,
@@ -118,6 +123,7 @@ export function useCyberArena() {
       activeParticipants.push({
         id: Number(p.id) || p.id as any,
         name: p.name,
+        role: p.role || 'Participant',
         color: p.color,
         vote: p.vote,
         hasVoted: !!p.vote,
@@ -141,7 +147,8 @@ export function useCyberArena() {
     const myCurrentP = participants.value.find(p => String(p.id) === String(myParticipantId.value))
     const newState: PresenceState = {
       id: myParticipantId.value,
-      name: myCurrentP?.name || 'Cyber Master',
+      name: myCurrentP?.name || myParticipantName.value,
+      role: myCurrentP?.role || myParticipantRole.value,
       color: myCurrentP?.color || '#ffffff',
       vote: myCurrentP?.vote || null,
       hasVoted: myCurrentP?.hasVoted || false,
@@ -151,13 +158,14 @@ export function useCyberArena() {
     await roomChannel.track(newState)
   }
 
-  async function initSupabaseSession(roomId: string, participantId: string, participantName: string) {
+  async function initSupabaseSession(roomId: string, participantId: string, participantName: string, participantRole: string = 'Developer') {
     clearTimers()
     cleanupSupabase()
     
     currentRoomId.value = roomId
     myParticipantId.value = participantId
     myParticipantName.value = participantName
+    myParticipantRole.value = participantRole
     
     destroyedIds.value = new Set()
     strikes.value = []
@@ -215,7 +223,7 @@ export function useCyberArena() {
     roomChannel.subscribe(async (status: string) => {
       if (status === 'SUBSCRIBED') {
         // Me uno a Presence pasando el nombre que elegí en el Lobby
-        await updateMyPresence({ vote: null, hasVoted: false, name: participantName })
+        await updateMyPresence({ vote: null, hasVoted: false, name: participantName, role: participantRole })
       }
     })
   }
@@ -243,10 +251,10 @@ export function useCyberArena() {
     if (isMultiplayer.value) {
       // Si ya hay roomId, recargamos (nuevo ciclo)
       if (currentRoomId.value && myParticipantId.value) {
-        initSupabaseSession(currentRoomId.value, myParticipantId.value, myParticipantName.value)
+        initSupabaseSession(currentRoomId.value, myParticipantId.value, myParticipantName.value, myParticipantRole.value)
       }
     } else {
-      initMockSession()
+      initMockSession(myParticipantRole.value)
     }
   }
 
