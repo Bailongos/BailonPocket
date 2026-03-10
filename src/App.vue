@@ -146,7 +146,7 @@ function prevTicket() {
 }
 
 function handleMondayLogin() {
-  const clientID = 'b017b4b6f6ca8ec8b1c6d16e5f2c45f0'
+  const clientID = import.meta.env.VITE_MONDAY_CLIENT_ID
   // Usamos el origin actual para que funcione tanto en local como en producción
   const redirectUri = window.location.origin + '/'
 
@@ -310,7 +310,7 @@ onMounted(() => {
               <div>
                 <div class="text-[10px] text-slate-500 uppercase tracking-[0.2em] mb-1">Sprint</div>
                 <div class="text-white font-mono text-xs md:text-sm">{{ currentTicket.group?.title || 'Backlog General'
-                  }}</div>
+                }}</div>
               </div>
             </div>
 

@@ -22,9 +22,9 @@ serve(async (req: Request) => {
     }
 
     // Usamos el ID de la app de Monday y el Secret almacenado en Supabase Vault
-    const clientId = "b017b4b6f6ca8ec8b1c6d16e5f2c45f0";
+    const clientId = Deno.env.get("MONDAY_CLIENT_ID");
     const clientSecret = Deno.env.get("MONDAY_CLIENT_SECRET");
-    const safeRedirectUri = redirect_uri || "https://bailonpokect.netlify.app/";
+    const safeRedirectUri = redirect_uri || Deno.env.get("MONDAY_REDIRECT_URI") || "http://localhost:5173/";
 
     // 1. Intercambiar Autorization Code por Access Token
     const tokenResponse = await fetch("https://auth.monday.com/oauth2/token", {
