@@ -12,61 +12,39 @@ const emit = defineEmits<{ (e: 'pick', val: string): void }>()
 </script>
 
 <template>
-  <footer
-    class="bg-slate-950/90 border-t py-6 px-4 md:py-10 z-[70] relative w-full overflow-hidden transition-colors duration-1000"
+  <footer class="h-32 bg-[#0a0b14] border-t border-slate-800 p-4 relative z-[70] transition-colors duration-1000"
     :class="props.theme.border">
-    <div class="w-full max-w-6xl mx-auto flex flex-col gap-6 md:gap-8">
-      <div class="flex justify-between items-center px-2 md:px-4">
-        <div class="flex items-center gap-3">
-          <div class="w-1 h-4 transition-colors duration-1000"
-            :class="[props.theme.background.replace('bg-', 'bg-'), props.theme.border.replace('border-', 'bg-')]" />
-          <h3 class="text-[11px] font-black uppercase tracking-[0.4em] transition-colors duration-1000"
-            :class="props.theme.textSecondary">Estimación_Fibonacci_Input</h3>
-        </div>
+    <!-- Estimation Input Label -->
+    <div
+      class="absolute -top-3 left-6 px-3 py-1 bg-slate-900 border border-slate-700 rounded text-[10px] font-bold text-slate-400 tracking-widest uppercase">
+      Estimation_Input
+    </div>
 
-        <div v-if="props.myVote"
-          class="flex items-center gap-2 px-4 py-1 rounded-full border transition-all duration-1000"
-          :class="[props.theme.border, props.theme.textPrimary]">
-          <div class="w-1.5 h-1.5 rounded-full animate-ping transition-colors duration-1000"
-            :class="props.theme.border.replace('border-', 'bg-')" />
-          <span class="text-[10px] font-black uppercase tracking-widest italic transition-colors duration-1000"
-            :class="props.theme.textSecondary">
-            Sequence_{{ props.myVote }}_Locked
-          </span>
-        </div>
-      </div>
-
-      <!-- Layout de wrapping universal para no depender de scroll -->
-      <div class="flex flex-wrap items-center justify-center gap-2 md:gap-4 px-2 md:px-0 pb-6 md:pb-0 pt-2 shrink-0">
-        <button v-for="val in props.fibonacci" :key="val" :disabled="props.isRevealed"
-          class="relative w-12 h-16 md:w-16 md:h-24 rounded-2xl font-black text-lg md:text-2xl transition-all duration-300 transform"
-          :class="[
-            props.myVote === val
-              ? `${props.theme.cardVoted} text-white -translate-y-8 scale-110`
-              : `${props.theme.cardIdle} text-slate-500 hover:text-white hover:-translate-y-2 hover:${props.theme.border}`,
-            props.isRevealed ? 'opacity-20 cursor-not-allowed translate-y-0 grayscale' : 'cursor-pointer'
-          ]" @click="emit('pick', val)">
-          <span class="relative z-10">{{ val }}</span>
-          <div class="absolute top-2 left-2 text-[10px] opacity-10 font-mono tracking-tighter pointer-events-none">
-            HEX_{{ val }}</div>
-          <div
-            class="absolute bottom-2 right-2 text-[10px] opacity-10 font-mono rotate-180 tracking-tighter pointer-events-none">
-            FIB_{{ val }}</div>
-          <div v-if="props.myVote === val"
-            class="absolute inset-0 bg-white/20 animate-pulse rounded-2xl pointer-events-none" />
-        </button>
-      </div>
+    <div
+      class="max-w-7xl mx-auto h-full flex items-center justify-center gap-2 md:gap-3 overflow-y-auto md:overflow-visible hide-scrollbar pt-2">
+      <button v-for="val in props.fibonacci" :key="val" :disabled="props.isRevealed" @click="emit('pick', val)"
+        class="group relative h-16 w-12 md:h-20 md:w-14 rounded-xl border-2 flex flex-col items-center justify-center transition-all duration-300 transform shrink-0"
+        :class="[
+          props.myVote === val
+            ? 'bg-cyan-500 border-cyan-300 -translate-y-4 shadow-[0_15px_30px_rgba(6,182,212,0.4)]'
+            : 'bg-slate-900/50 border-slate-800 hover:border-cyan-500/50 hover:-translate-y-2',
+          props.isRevealed ? 'opacity-20 cursor-not-allowed translate-y-0 grayscale' : 'cursor-pointer'
+        ]">
+        <span class="text-lg md:text-xl font-black font-mono transition-colors"
+          :class="props.myVote === val ? 'text-black' : 'text-slate-400 group-hover:text-cyan-400'">
+          {{ val }}
+        </span>
+        <div v-if="props.myVote === val" class="absolute -bottom-1 w-6 h-1 bg-white rounded-full" />
+      </button>
     </div>
   </footer>
 </template>
 
 <style scoped>
-/* Ocultar barra de scroll para WebKit */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
-/* Ocultar barra de scroll para Firefox e IE */
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

@@ -25,6 +25,15 @@
   100% { transform: translateY(400%); }
 }
 
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(150%) skewX(-30deg); }
+}
+
 @keyframes slide-in-from-left {
   from { opacity: 0; transform: translateX(-12px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -37,6 +46,7 @@
 
 .shake-active { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
 .disintegrating { animation: disintegrate 0.8s ease-in forwards !important; }
+.animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
 
 .lightning-path {
   stroke-dasharray: 1000;

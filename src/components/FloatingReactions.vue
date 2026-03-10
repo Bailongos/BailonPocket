@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
         <!-- Barra de interacción (pointer-events-auto para que sí reciba clics) -->
         <div
-            class="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-2 bg-black/60 p-2 rounded-full border border-white/10 backdrop-blur-md">
+            class="absolute bottom-36 left-6 pointer-events-auto flex gap-2 bg-black/60 p-2 rounded-2xl border border-sky-500/20 shadow-[0_0_20px_rgba(14,165,233,0.2)] backdrop-blur-md flex-col md:flex-row">
             <button v-for="e in EMOTES" :key="e" @click="emit('fire', e)"
                 class="w-10 h-10 rounded-full hover:bg-white/20 flex items-center justify-center text-xl transition-transform active:scale-75">
                 {{ e }}

@@ -38,12 +38,18 @@ serve(async (req: Request) => {
     });
 
     // ── ACTION: list_boards ──────────────────────────────────────────
+    // Trae TODOS los tableros de una sola vez (paginando internamente)
     if (action === 'list_boards') {
-      const pageNum = page || 1;
-      const query = `query { boards (limit: 500, page: ${pageNum}) { id name description items_count } }`;
-      const data = await mondayGQL(access_token, query);
-      console.log("Boards page", pageNum, "count:", data?.data?.boards?.length);
-      return ok({ status: 'success', boards: data?.data?.boards || [], _debug: data });
+      const allBoards: any[] = [];
+      for (let p = 1; p <= 5; p++) {
+        const query = `query { boards (limit: 500, page: ${p}) { id name description items_count } }`;
+        const data = await mondayGQL(access_token, query);
+        const boards = data?.data?.boards || [];
+        allBoards.push(...boards);
+        if (boards.length < 500) break; // Ya no hay mas paginas
+      }
+      console.log("Total boards fetched:", allBoards.length);
+      return ok({ status: 'success', boards: allBoards });
     }
 
     // ── ACTION: search_boards ────────────────────────────────────────
@@ -76,6 +82,18 @@ serve(async (req: Request) => {
               id
               name
               group { title }
+              column_values {
+                id
+                type
+                text
+                value
+                column { title }
+              }
+              updates {
+                id
+                text_body
+                created_at
+              }
             }
           }
         }
@@ -96,6 +114,18 @@ serve(async (req: Request) => {
               id
               name
               group { title }
+              column_values {
+                id
+                type
+                text
+                value
+                column { title }
+              }
+              updates {
+                id
+                text_body
+                created_at
+              }
             }
           }
         }`;
@@ -113,7 +143,50 @@ serve(async (req: Request) => {
       });
     }
 
-    return ok({ error: "Invalid action. Use 'list_boards', 'search_boards', or 'get_items'" });
+    // ── ACTION: update_item ──────────────────────────────────────────
+    if (action === 'update_item' && board_id && item_id && column_title && value !== undefined) {
+      
+      // Step 1: Encontrar el column_id correspondiente al column_title (ej: "ESP")
+      const boardQuery = `query { boards (ids: [${board_id}]) { columns { id title type } } }`;
+      const boardData = await mondayGQL(access_token, boardQuery);
+      
+      const columns = boardData?.data?.boards?.[0]?.columns || [];
+      const targetColumn = columns.find((c: any) => c.title.trim().toLowerCase() === column_title.trim().toLowerCase());
+
+      if (!targetColumn) {
+        return new Response(JSON.stringify({ 
+          error: `No se encontró una columna llamada "${column_title}" en este tablero. Asegúrate de que el nombre sea exacto.` 
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      // Step 2: Formatear el value segun el tipo (Monday a veces requiere JSON strings para numbers)
+      const isNumber = targetColumn.type === 'numeric';
+      // Para types como result, formula, no se puede mutar directamente con change_simple_column_value
+      // Usar change_simple_column_value con el ID correcto
+      const mutation = `mutation {
+        change_simple_column_value(
+          item_id: ${item_id},
+          board_id: ${board_id},
+          column_id: "${targetColumn.id}",
+          value: "${value}"
+        ) {
+          id
+        }
+      }`;
+
+      const updateData = await mondayGQL(access_token, mutation);
+      
+      if (updateData.errors) {
+        throw new Error(JSON.stringify(updateData.errors));
+      }
+
+      return ok({ status: 'success', updated: updateData.data });
+    }
+
+    return ok({ error: "Invalid action. Use 'list_boards', 'search_boards', 'get_items', or 'update_item'" });
 
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
