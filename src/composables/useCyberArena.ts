@@ -4,7 +4,7 @@ import { THEMES, type ThemeName } from '@/constants/themes'
 import type { ChatMessage, Participant, Strike, Stats, Reaction } from '@/types'
 import { supabase } from '@/lib/supabase'
 
-// Interfaz para el estado de presencia que enviaremos a Realtime
+// Interfaz para el estado de presencia que enviaremos a Realtime 
 interface PresenceState {
   id: number | string
   name: string
